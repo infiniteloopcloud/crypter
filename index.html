@@ -6,6 +6,21 @@
     <title>Page Title</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <script>
+        function getMessageEncoding() {
+            let message = "test";
+            let enc = new TextEncoder();
+            return enc.encode(message);
+        }
+
+        function str2ab(str) {
+            var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
+            var bufView = new Uint8Array(buf);
+            for (var i=0, strLen=str.length; i<strLen; i++) {
+                bufView[i] = str.charCodeAt(i);
+            }
+            return buf;
+        }
+
         // https://gist.github.com/saulshanabrook/b74984677bccd08b028b30d9968623f5
         let keyChain = {};
         let key = window.crypto.subtle.generateKey(
@@ -15,11 +30,37 @@
         publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
         hash: {name: "SHA-256"}, //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
     },
-false,
+true,
             ["encrypt", "decrypt"]
         ).then(keys => {
-            console.log(keys.privateKey);
-            keyChain = keys;
+            crypto.subtle.exportKey("jwk", keys.publicKey).then(publicK => {
+                console.log("Lofasz");
+                //let d = String.fromCharCode.apply(null, new Uint16Array(publicK))
+                console.log(publicK);
+
+
+            });
+            crypto.subtle.exportKey("jwk", keys.privateKey).then(privK => {
+                console.log("Lofasz");
+                //let d = String.fromCharCode.apply(null, new Uint16Array(publicK))
+                console.log(privK);
+            });
+
+            // Encrypt test
+            window.crypto.subtle.encrypt({name: "RSA-OAEP"}, keys.publicKey, getMessageEncoding()).then(chipertext => {
+                console.log(chipertext);
+                let data = btoa(String.fromCharCode.apply(null, new Uint8Array(chipertext)));
+                console.log(data);
+
+                // Decrypt test
+                cdata = str2ab(atob(data));
+                console.log(cdata);
+                window.crypto.subtle.decrypt({name: "RSA-OAEP"}, keys.privateKey, cdata).then(decrypted => {
+                    console.log(decrypted);
+                })
+                //console.log(keys.privateKey);
+                keyChain = keys;
+            });
         });
         
         let iv = window.crypto.getRandomValues(new Uint8Array(12));
