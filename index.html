@@ -13,7 +13,7 @@
         }
 
         function str2ab(str) {
-            var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
+            var buf = new ArrayBuffer(str.length); // 2 bytes for each char
             var bufView = new Uint8Array(buf);
             for (var i=0, strLen=str.length; i<strLen; i++) {
                 bufView[i] = str.charCodeAt(i);
@@ -34,24 +34,32 @@
             )
 
             let publicK = await window.crypto.subtle.exportKey("jwk", keys.publicKey);
-            console.log(publicK);
+            // console.log(publicK);
 
             let privateK = await window.crypto.subtle.exportKey("jwk", keys.privateKey);
-            console.log(privateK);
+            // console.log(privateK);
+
+            let encryptedData = getMessageEncoding();
+            console.log(encryptedData);
 
             // Encrypt test
-            let chipertext = await window.crypto.subtle.encrypt({name: "RSA-OAEP"}, keys.publicKey, getMessageEncoding())
+            let chipertext = await window.crypto.subtle.encrypt({name: "RSA-OAEP"}, keys.publicKey, encryptedData)
 
             console.log(chipertext);
-            let data = btoa(String.fromCharCode.apply(null, new Uint8Array(chipertext)));
+            let chipertextStr = String.fromCharCode.apply(null, new Uint8Array(chipertext));
+            console.log(chipertextStr);
+            let data = btoa(chipertextStr);
             console.log(data);
 
             // Decrypt test
-            cdata = str2ab(atob(data));
+            let newChipertextStr = atob(data);
+            console.log(newChipertextStr);
+            cdata = str2ab(newChipertextStr);
             console.log(cdata);
-            let decrypted = await window.crypto.subtle.decrypt({name: "RSA-OAEP"}, keys.privateKey, cdata)
-            console.log(decrypted);
-            keyChain = keys;
+            let decryptedAb = await window.crypto.subtle.decrypt({name: "RSA-OAEP"}, keys.privateKey, cdata)
+            console.log(decryptedAb);
+            let decrypted = String.fromCharCode.apply(null, new Uint8Array(decryptedAb));
+            console.log(decrypted)
         }
 
         testIt();
