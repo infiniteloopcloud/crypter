@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Page Title</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <script>
+        let globalKeys = {};
+        async function generateKey() {
+            let keys = await window.crypto.subtle.generateKey(
+                {
+                    name: "RSA-OAEP",
+                    modulusLength: 2048,
+                    publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+                    hash: { name: "SHA-256" },
+                },
+                true,
+                ["encrypt", "decrypt"]
+            );
+
+            let exportedPublicKey = await window.crypto.subtle.exportKey("jwk", keys.publicKey);
+            let exportedPrivateKey = await window.crypto.subtle.exportKey("jwk", keys.privateKey);
+
+            return {
+                keys: keys,
+                exportedPublicKey: exportedPublicKey,
+                exportedPrivateKey: exportedPrivateKey,
+                encryptionKey: btoa(JSON.stringify(exportedPublicKey)),
+            };
+        }
+
+        async function encrypt() {
+            let encryptionKey = document.getElementById("encryption_key").value
+            let plaintext = document.getElementById("plaintext").value
+
+            let encryptionKeyObj = JSON.parse(atob(encryptionKey));
+            let type = {
+                name: "RSA-OAEP",
+                hash: "SHA-256",
+            };
+            let encryptionKeyImported = await crypto.subtle.importKey("jwk", encryptionKeyObj, type, true, ["encrypt"]);
+
+            let chipertext = await window.crypto.subtle.encrypt({ name: "RSA-OAEP" }, encryptionKeyImported, new TextEncoder().encode(plaintext));
+
+            let chipertextStr = String.fromCharCode.apply(null, new Uint8Array(chipertext));
+            let chipertextBase64 = btoa(chipertextStr);
+
+            displayChipertext(chipertextBase64);
+        }
+
+        async function decrypt() {
+            let chipertextInput = document.getElementById("chipertext").value
+            let newChipertextStr = atob(chipertextInput);
+            chipertext = str2ab(newChipertextStr);
+
+            let decryptedAb = await window.crypto.subtle.decrypt({ name: "RSA-OAEP" }, globalKeys.keys.privateKey, chipertext);
+            let decrypted = String.fromCharCode.apply(null, new Uint8Array(decryptedAb));
+
+            displayPlaintext(decrypted);
+        }
+
+        function displayEncryptionKey(key) {
+            document.getElementById("public-key").innerText = key
+        }
+
+        function displayChipertext(chipertext) {
+            document.getElementById("chipertext-output").innerText = chipertext
+        }
+
+        function displayPlaintext(plaintext) {
+            document.getElementById("plaintext-output").innerText = plaintext
+        }
+
+        function str2ab(str) {
+            var buf = new ArrayBuffer(str.length); // 2 bytes for each char
+            var bufView = new Uint8Array(buf);
+            for (var i = 0, strLen = str.length; i < strLen; i++) {
+                bufView[i] = str.charCodeAt(i);
+            }
+            return buf;
+        }
+
+        async function main() {
+            let keys = await generateKey();
+            globalKeys = keys;
+
+            displayEncryptionKey(keys.encryptionKey);
+        }
+
+        main();
+    </script>
+</head>
+
+<body>
+    <h1>Crypter</h1>
+
+    <h3>Encrypt</h3>
+    <form>
+        <label for="encryption_key">Encryption Key: </label>
+        <input type="text" id="encryption_key" name="encryption_key"><br><br>
+        <label for="plaintext">Plaintext:</label>
+        <input type="text" id="plaintext" name="plaintext"><br><br>
+        <input type="button" value="Encrypt" onclick="encrypt()">
+    </form>
+    <p id="chipertext-output"></p>
+
+    <h3>Decrypt</h3>
+    <p id="public-key"></p>
+    <form>
+        <label for="chipertext">Chipertext:</label>
+        <input type="text" id="chipertext" name="chipertext"><br><br>
+        <input type="button" value="Decrypt" onclick="decrypt()">
+    </form>
+    <p id="plaintext-output"></p>
+</body>
+
+</html>
