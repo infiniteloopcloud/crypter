@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Page Title</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <script>
+        async function generateKey() {
+            let ecdhKeys = await window.crypto.subtle.generateKey(
+                {
+                    name: "ECDH",
+                    namedCurve: "P-256",
+                },
+                true,
+                ["deriveKey", "deriveBits"]
+            )
+
+            let aesKeys = await window.crypto.subtle.deriveKey(
+                {
+                    name: "ECDH",
+                    namedCurve: "P-256",
+                    public: ecdhKeys.publicKey,
+                },
+                ecdhKeys.privateKey,
+                {
+                    name: "AES-CTR",
+                    length: 256,
+                },
+                true,
+                ["encrypt", "decrypt"]
+            )
+
+            return {
+                ecdhKeys,
+                aesKeys,
+            }
+        }
+
+        async function exportECDH(keys) {
+            let publicK = await window.crypto.subtle.exportKey("jwk", keys.publicKey);
+            let privateK = await window.crypto.subtle.exportKey("jwk", keys.privateKey);
+
+            return {
+                publicK,
+                privateK,
+            }
+        }
+
+        async function exportAES(keydata) {
+            let key = await window.crypto.subtle.exportKey("jwk", keydata);
+            return key
+        }
+
+        async function encrypt(aesKey, plaintext) {
+            let encryptionKey = await crypto.subtle.importKey("jwk", aesKey, "AES-CTR", false, ["encrypt"])
+            let iv = window.crypto.getRandomValues(new Uint8Array(16));
+            let chipertext = await crypto.subtle.encrypt(
+                {
+                    name: "AES-CTR",
+                    counter: iv,
+                    length: 128,
+                },
+                encryptionKey,
+                new TextEncoder().encode(plaintext)
+            );
+
+            let chipertextStr = String.fromCharCode.apply(null, new Uint8Array(chipertext));
+            let data = btoa(chipertextStr);
+            return {data, iv}
+        }
+
+        async function decrypt(aesKey, chipertext, iv) {
+            let encryptionKey = await crypto.subtle.importKey("jwk", aesKey, "AES-CTR", false, ["decrypt"])
+            let plaintext = await crypto.subtle.decrypt(
+                {
+                    name: "AES-CTR",
+                    counter: iv,
+                    length: 128,
+                },
+                encryptionKey,
+                new TextEncoder().encode(chipertext)
+            );
+        }
+
+        async function testBe() {
+            let keys = await generateKey();
+
+            let exportedKeys = await exportECDH(keys.ecdhKeys);
+            let exportedAES = await exportAES(keys.aesKeys);
+            // let publicJSON = JSON.stringify(exportedKeys.publicK);
+            // let encryptionKey = btoa(publicJSON);
+            // console.log(encryptionKey);
+            // extractedPublicKey = JSON.parse(atob(encryptionKey));
+            // console.log(extractedPublicKey);
+            console.log(exportedAES);
+            let encrypted = await encrypt(exportedAES, "test")
+            console.log(encrypted);
+        }
+
+
+        function getMessageEncoding() {
+            let message = "test";
+            let enc = new TextEncoder();
+            return enc.encode(message);
+        }
+
+        function str2ab(str) {
+            var buf = new ArrayBuffer(str.length); // 2 bytes for each char
+            var bufView = new Uint8Array(buf);
+            for (var i=0, strLen=str.length; i<strLen; i++) {
+                bufView[i] = str.charCodeAt(i);
+            }
+            return buf;
+        }
+
+        async function testIt() {
+            let keys = await window.crypto.subtle.generateKey(
+                {
+                    name: "RSA-OAEP",
+                    modulusLength: 2048,
+                    publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+                    hash: {name: "SHA-256"},
+                },
+                true,
+                ["encrypt", "decrypt"]
+            )
+
+            let publicK = await window.crypto.subtle.exportKey("jwk", keys.publicKey);
+            // console.log(publicK);
+
+            let privateK = await window.crypto.subtle.exportKey("jwk", keys.privateKey);
+            // console.log(privateK);
+
+            let encryptedData = getMessageEncoding();
+            console.log(encryptedData);
+
+            // Encrypt test
+            let chipertext = await window.crypto.subtle.encrypt({name: "RSA-OAEP"}, keys.publicKey, encryptedData)
+
+            console.log(chipertext);
+            let chipertextStr = String.fromCharCode.apply(null, new Uint8Array(chipertext));
+            console.log(chipertextStr);
+            let data = btoa(chipertextStr);
+            console.log(data);
+
+            // Decrypt test
+            let newChipertextStr = atob(data);
+            console.log(newChipertextStr);
+            cdata = str2ab(newChipertextStr);
+            console.log(cdata);
+            let decryptedAb = await window.crypto.subtle.decrypt({name: "RSA-OAEP"}, keys.privateKey, cdata)
+            console.log(decryptedAb);
+            let decrypted = String.fromCharCode.apply(null, new Uint8Array(decryptedAb));
+            console.log(decrypted)
+        }
+
+        testBe();
+    </script>
+</head>
+<body>
+    Hello
+</body>
+</html>

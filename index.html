@@ -7,59 +7,31 @@
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <script>
         async function generateKey() {
-            let ecdhKeys = await window.crypto.subtle.generateKey(
+            let keys = await window.crypto.subtle.generateKey(
                 {
-                    name: "ECDH",
-                    namedCurve: "P-256",
-                },
-                true,
-                ["deriveKey", "deriveBits"]
-            )
-
-            let aesKeys = await window.crypto.subtle.deriveKey(
-                {
-                    name: "ECDH",
-                    namedCurve: "P-256",
-                    public: ecdhKeys.publicKey,
-                },
-                ecdhKeys.privateKey,
-                {
-                    name: "AES-CTR",
-                    length: 256,
+                    name: "RSA-OAEP",
+                    modulusLength: 2048,
+                    publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+                    hash: {name: "SHA-256"},
                 },
                 true,
                 ["encrypt", "decrypt"]
-            )
+            );
+
+            let exportedPublicKey = await window.crypto.subtle.exportKey("jwk", keys.publicKey);
+            let exportedPrivateKey = await window.crypto.subtle.exportKey("jwk", keys.privateKey);
 
             return {
-                ecdhKeys,
-                aesKeys,
-            }
+                keys: keys,
+                exportedPublicKey: exportedPublicKey,
+                exportedPrivateKey: exportedPrivateKey,
+                encryptionKey: btoa(JSON.stringify(exportedPublicKey)),
+            };
         }
 
-        async function exportECDH(keys) {
-            let publicK = await window.crypto.subtle.exportKey("jwk", keys.publicKey);
-            let privateK = await window.crypto.subtle.exportKey("jwk", keys.privateKey);
-
-            return {
-                publicK,
-                privateK,
-            }
-        }
-
-        async function encrypt(encryptionKey) {
-            let extractedPublicKey = JSON.parse(atob(encryptionKey));
-        }
-
-        async function testBe() {
-            let keys = await generateKey();
-
-            let exportedKeys = await exportECDH(keys.ecdhKeys);
-            let publicJSON = JSON.stringify(exportedKeys.publicK);
-            let encryptionKey = btoa(publicJSON);
-            console.log(encryptionKey);
-            extractedPublicKey = JSON.parse(atob(encryptionKey));
-            console.log(extractedPublicKey);
+        function displayEncryptionKey(key) {
+            console.log(key);
+            document.getElementById("public-key").innerText = key
         }
 
 
@@ -91,7 +63,7 @@
             )
 
             let publicK = await window.crypto.subtle.exportKey("jwk", keys.publicKey);
-            // console.log(publicK);
+            console.log(btoa(JSON.stringify(publicK)));
 
             let privateK = await window.crypto.subtle.exportKey("jwk", keys.privateKey);
             // console.log(privateK);
@@ -119,10 +91,35 @@
             console.log(decrypted)
         }
 
-        testBe();
+        // testIt();
+
+        async function main() {
+            let keys = await generateKey();
+
+            displayEncryptionKey(keys.encryptionKey);
+        }
+
+        main();
     </script>
 </head>
 <body>
-    Hello
+    <h1>Crypter</h1>
+
+    <h3>Encrypt</h3>
+    <form>
+        <label for="encryption_key">Encryption Key: </label>
+        <input type="text" id="encryption_key" name="encryption_key"><br><br>
+        <label for="plaintext">Plaintext:</label>
+        <input type="text" id="plaintext" name="plaintext"><br><br>
+        <input type="submit" value="Encrypt">
+    </form>
+
+    <h3>Decrypt</h3>
+    <p id="public-key"></p>
+    <form>
+        <label for="chipertext">Chipertext:</label>
+        <input type="text" id="chipertext" name="chipertext"><br><br>
+        <input type="submit" value="Decrypt">
+    </form>
 </body>
 </html>
