@@ -96,7 +96,6 @@
 	const main = async () => {
 		const keys = await generateKey();
 		globalKeys = keys;
-		// displayEncryptionKey(keys.encryptionKey);
 		encryptionKeyOutput = keys.encryptionKey;
 	};
 
