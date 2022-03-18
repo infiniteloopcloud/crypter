@@ -64,7 +64,6 @@
 		const chipertextStr = String.fromCharCode.apply(null, new Uint8Array(chipertext));
 		const chipertextBase64 = window.btoa(chipertextStr);
 
-		// displayChipertext(chipertextBase64);
 		chiperTextOutput = chipertextBase64;
 	};
 
@@ -80,7 +79,6 @@
 
 		const decrypted = String.fromCharCode.apply(null, new Uint8Array(decryptedAb));
 
-		// displayPlaintext(decrypted);
 		plainTextOutput = decrypted;
 	};
 
