@@ -4,7 +4,8 @@
 //     window.webkitIDBTransaction ||
 //     window.msIDBTransaction || { READ_WRITE: 'readwrite' };
 // window.IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
-export const checkBrowserCompatibility = () => {
+
+export const checkBrowserCompatibility = async () => {
     if (!window.indexedDB) {
         console.log(
             "Your browser doesn't support a stable version of IndexedDB. Such and such feature will not be available."
@@ -15,12 +16,12 @@ export const checkBrowserCompatibility = () => {
 export const processCrypt = async () => {
     const open = window.indexedDB.open('crypter', 1);
 
-    open.onupgradeneeded = function () {
+    open.onupgradeneeded = () => {
         const db = open.result;
         db.createObjectStore('private_keys', { autoIncrement: false });
     };
 
-    open.onsuccess = function () {
+    open.onsuccess = () => {
         const db = open.result;
         const tx = db.transaction('private_keys', 'readwrite');
         const store = tx.objectStore('private_keys');
@@ -36,12 +37,12 @@ export const processCrypt = async () => {
 export const getCryp = async () => {
     const open = window.indexedDB.open('crypter', 1);
 
-    open.onupgradeneeded = function () {
+    open.onupgradeneeded = () => {
         const db = open.result;
         db.createObjectStore('private_keys', { autoIncrement: false });
     };
 
-    open.onsuccess = function () {
+    open.onsuccess = () => {
         const db = open.result;
         const tx = db.transaction('private_keys', 'readonly');
         const store = tx.objectStore('private_keys');
@@ -56,7 +57,7 @@ export const getCryp = async () => {
             }
         };
 
-        tx.oncomplete = function () {
+        tx.oncomplete = () => {
             db.close();
         };
     };
