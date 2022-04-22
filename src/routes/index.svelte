@@ -1,10 +1,16 @@
-<script lang="ts">
-    import { checkBrowserCompatibility, getCryp, processCrypt } from '$lib/utils/storeController';
+<script context="module" lang="ts">
+    import type { Load } from '@sveltejs/kit';
+    export const load: Load = async () => {
+        return {};
+    };
+</script>
 
-    import { onMount } from 'svelte';
+<script lang="ts">
+    import { checkBrowserCompatibility } from '$lib/utils/storeController';
     import CodeBlock from '$lib/components/blocks/CodeBlock.svelte';
+    import { onMount } from 'svelte';
     import { keyStore } from '$lib/stores';
-    import { stringify } from 'postcss';
+    import { get as getIdb, set as setIdb } from 'idb-keyval';
 
     let globalKeys: Record<string, any>;
 
@@ -48,6 +54,13 @@
         //     ['decrypt']
         // );
 
+        const existKey = await getIdb('combinedKey');
+        console.log(existKey);
+        await setIdb('combinedKey', {
+            privateKey: encryptionPrivateKey,
+            publicKey: encryptionPublicKey
+        });
+
         $keyStore = { privateKey: encryptionPrivateKey, publicKey: encryptionPublicKey };
 
         return {
@@ -79,7 +92,10 @@
             new TextEncoder().encode(plainTextInput)
         );
 
-        const chipertextStr = String.fromCharCode.apply(null, new Uint8Array(chipertext));
+        const chipertextStr = String.fromCharCode.apply(
+            null,
+            Array.from(new Uint8Array(chipertext))
+        );
         const chipertextBase64 = window.btoa(chipertextStr);
 
         chiperTextOutput = chipertextBase64;
@@ -95,7 +111,7 @@
             chipertext
         );
 
-        const decrypted = String.fromCharCode.apply(null, new Uint8Array(decryptedAb));
+        const decrypted = String.fromCharCode.apply(null, Array.from(new Uint8Array(decryptedAb)));
 
         plainTextOutput = decrypted;
     };
