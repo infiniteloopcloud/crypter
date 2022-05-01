@@ -11,6 +11,7 @@
     import { onMount } from 'svelte';
     import { keyStore } from '$lib/stores';
     import { get as getIdb, set as setIdb } from 'idb-keyval';
+    import type { KeyStore } from '$lib/models/interfaces/KeyStore.interface';
 
     let globalKeys: Record<string, any>;
 
@@ -25,6 +26,25 @@
     let chiperTextOutput: string;
 
     const generateKey = async () => {
+        // Checking existing key in the browser's IndexedDB storage.
+        const cachedKeys = await getIdb<KeyStore>('combinedKey');
+        console.log(cachedKeys);
+
+        // If key is exists then import it.
+        if (cachedKeys?.privateKey) {
+            await window.crypto.subtle.importKey(
+                'jwk', //can be "jwk" (public or private), "spki" (public only), or "pkcs8" (private only)
+                JSON.parse(window.atob(cachedKeys.privateKey)) as JsonWebKey,
+                {
+                    //these are the algorithm options
+                    name: 'RSA-OAEP',
+                    hash: { name: 'SHA-256' } //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
+                },
+                false, //whether the key is extractable (i.e. can be used in exportKey)
+                ['decrypt'] //"encrypt" or "wrapKey" for public key import or "decrypt" or "unwrapKey" for private key imports
+            );
+        }
+        // Generate keys.
         const keys = await window.crypto.subtle.generateKey(
             {
                 name: 'RSA-OAEP',
@@ -41,26 +61,15 @@
         const encryptionPublicKey = window.btoa(JSON.stringify(exportedPublicKey));
         const encryptionPrivateKey = window.btoa(JSON.stringify(exportedPrivateKey));
 
-        // const myKey = await window.crypto.subtle.importKey(
-        //     'jwk',
-        //     exportedPrivateKey,
-        //     {
-        //         name: 'RSA-OAEP',
-        //         modulusLength: 2048,
-        //         publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-        //         hash: { name: 'SHA-256' }
-        //     },
-        //     true,
-        //     ['decrypt']
-        // );
+        // If there is existing cached key, we don't want to update it.
+        if (!cachedKeys) {
+            await setIdb('combinedKey', {
+                privateKey: encryptionPrivateKey,
+                publicKey: encryptionPublicKey
+            });
+        }
 
-        const existKey = await getIdb('combinedKey');
-        console.log(existKey);
-        await setIdb('combinedKey', {
-            privateKey: encryptionPrivateKey,
-            publicKey: encryptionPublicKey
-        });
-
+        // Store keys in a svelte store, to reach them easily.
         $keyStore = { privateKey: encryptionPrivateKey, publicKey: encryptionPublicKey };
 
         return {
@@ -72,7 +81,7 @@
     };
 
     const encrypt = async () => {
-        const encryptionKeyObj = JSON.parse(window.atob(encryptionKeyInput));
+        const encryptionKeyObj = JSON.parse(window.atob(encryptionKeyInput)) as JsonWebKey;
         const type = {
             name: 'RSA-OAEP',
             hash: 'SHA-256'

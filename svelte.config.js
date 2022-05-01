@@ -12,7 +12,8 @@ const config = {
         adapter: adapterStatic(),
         prerender: {
             default: true
-        }
+        },
+        trailingSlash: 'never'
     }
 };
 
