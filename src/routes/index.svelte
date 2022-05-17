@@ -28,36 +28,60 @@
     const generateKey = async () => {
         // Checking existing key in the browser's IndexedDB storage.
         const cachedKeys = await getIdb<KeyStore>('combinedKey');
-        console.log(cachedKeys);
 
-        // If key is exists then import it.
-        if (cachedKeys?.privateKey) {
-            await window.crypto.subtle.importKey(
-                'jwk', //can be "jwk" (public or private), "spki" (public only), or "pkcs8" (private only)
-                JSON.parse(window.atob(cachedKeys.privateKey)) as JsonWebKey,
-                {
-                    //these are the algorithm options
-                    name: 'RSA-OAEP',
-                    hash: { name: 'SHA-256' } //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
-                },
-                false, //whether the key is extractable (i.e. can be used in exportKey)
-                ['decrypt'] //"encrypt" or "wrapKey" for public key import or "decrypt" or "unwrapKey" for private key imports
-            );
-        }
-        // Generate keys.
-        const keys = await window.crypto.subtle.generateKey(
-            {
-                name: 'RSA-OAEP',
-                modulusLength: 2048,
-                publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-                hash: { name: 'SHA-256' }
-            },
-            true,
-            ['encrypt', 'decrypt']
-        );
+        const loadKeys = async () => {
+            // If key is exists then import it.
+            if (cachedKeys?.privateKey && cachedKeys?.publicKey) {
+                const privateKey = await window.crypto.subtle.importKey(
+                    'jwk', //can be "jwk" (public or private), "spki" (public only), or "pkcs8" (private only)
+                    JSON.parse(window.atob(cachedKeys.privateKey)) as JsonWebKey,
+                    {
+                        //these are the algorithm options
+                        name: 'RSA-OAEP',
+                        hash: { name: 'SHA-256' } //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
+                    },
+                    true, //whether the key is extractable (i.e. can be used in exportKey)
+                    ['decrypt'] //"encrypt" or "wrapKey" for public key import or "decrypt" or "unwrapKey" for private key imports
+                );
+                const publicKey = await window.crypto.subtle.importKey(
+                    'jwk', //can be "jwk" (public or private), "spki" (public only), or "pkcs8" (private only)
+                    JSON.parse(window.atob(cachedKeys.publicKey)) as JsonWebKey,
+                    {
+                        //these are the algorithm options
+                        name: 'RSA-OAEP',
+                        hash: { name: 'SHA-256' } //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
+                    },
+                    true, //whether the key is extractable (i.e. can be used in exportKey)
+                    ['encrypt'] //"encrypt" or "wrapKey" for public key import or "decrypt" or "unwrapKey" for private key imports
+                );
+                return {
+                    publicKey,
+                    privateKey
+                };
+            } else {
+                // Generate keys.
+                const { privateKey, publicKey } = await window.crypto.subtle.generateKey(
+                    {
+                        name: 'RSA-OAEP',
+                        modulusLength: 2048,
+                        publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+                        hash: { name: 'SHA-256' }
+                    },
+                    true,
+                    ['encrypt', 'decrypt']
+                );
 
-        const exportedPublicKey = await window.crypto.subtle.exportKey('jwk', keys.publicKey);
-        const exportedPrivateKey = await window.crypto.subtle.exportKey('jwk', keys.privateKey);
+                return {
+                    publicKey,
+                    privateKey
+                };
+            }
+        };
+
+        const { publicKey, privateKey } = await loadKeys();
+
+        const exportedPublicKey = await window.crypto.subtle.exportKey('jwk', await publicKey);
+        const exportedPrivateKey = await window.crypto.subtle.exportKey('jwk', await privateKey);
         const encryptionPublicKey = window.btoa(JSON.stringify(exportedPublicKey));
         const encryptionPrivateKey = window.btoa(JSON.stringify(exportedPrivateKey));
 
@@ -73,7 +97,10 @@
         $keyStore = { privateKey: encryptionPrivateKey, publicKey: encryptionPublicKey };
 
         return {
-            keys,
+            keys: {
+                publicKey,
+                privateKey
+            },
             exportedPublicKey,
             exportedPrivateKey,
             encryptionKey: encryptionPublicKey
