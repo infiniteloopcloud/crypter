@@ -8,13 +8,13 @@
 <div
     class="{$$props.class
         ? `${$$props.class}`
-        : 'bg-gray-100'} relative overflow-auto rounded-md p-3 group"
+        : 'rounded-[40px] bg-primary-500 border-secondary-500 focus:bg-primary-600'} border relative overflow-auto p-3 group"
 >
     <pre lang={preLang} id="public-key" class="whitespace-normal my-4 mx-0">
         <code class="break-all">{text}</code>
     </pre>
     {#if copyClipboard}
-        <div class="absolute right-0 top-0 ">
+        <div class="absolute right-2 top-2 ">
             <CopyClipboard {text} />
         </div>
     {/if}

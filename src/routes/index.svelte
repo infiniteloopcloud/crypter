@@ -6,17 +6,31 @@
 </script>
 
 <script lang="ts">
-    import { checkBrowserCompatibility } from '$lib/utils/storeController';
-    import CodeBlock from '$lib/components/blocks/CodeBlock.svelte';
+    import { checkBrowserCompatibility } from '$lib/utils/helpers';
     import { onMount } from 'svelte';
-    import { keyStore } from '$lib/stores';
     import { get as getIdb, set as setIdb } from 'idb-keyval';
     import type { KeyStore } from '$lib/models/interfaces/KeyStore.interface';
+    import Send from '$lib/components/Send.svelte';
+    import Receive from '$lib/components/Receive.svelte';
 
-    let globalKeys: Record<string, any>;
+    interface GlobalKeys {
+        keys: {
+            publicKey: CryptoKey;
+            privateKey: CryptoKey;
+        };
+        /* eslint-disable */
+        exportedPublicKey: JsonWebKey;
+        exportedPrivateKey: JsonWebKey;
+        /* eslint-enable */
+
+        encryptionKey: string;
+    }
+
+    let globalKeys: GlobalKeys;
 
     // Inputs
     let encryptionKeyInput: string;
+    // let decryptionKeyInput: string;
     let plainTextInput: string;
     let chiperTextInput: string;
 
@@ -25,76 +39,89 @@
     let plainTextOutput: string;
     let chiperTextOutput: string;
 
+    // Existing keys from the IDB store
+    let cachedKeys: KeyStore | undefined;
+
+    /** Load keys from cache(indexedDB) */
+    const loadCachedKeys = async (keyStore: KeyStore) => {
+        // Private keys used for decrypt
+        const privateKey = await window.crypto.subtle.importKey(
+            'jwk', //can be "jwk" (public or private), "spki" (public only), or "pkcs8" (private only)
+            JSON.parse(window.atob(keyStore.privateKey)),
+            {
+                //these are the algorithm options
+                name: 'RSA-OAEP',
+                hash: { name: 'SHA-256' } //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
+            },
+            true, //whether the key is extractable (i.e. can be used in exportKey)
+            ['decrypt'] //"encrypt" or "wrapKey" for public key import or "decrypt" or "unwrapKey" for private key imports
+        );
+        // Public keys used for encrype
+        const publicKey = await window.crypto.subtle.importKey(
+            'jwk', //can be "jwk" (public or private), "spki" (public only), or "pkcs8" (private only)
+            JSON.parse(window.atob(keyStore.publicKey)),
+            {
+                //these are the algorithm options
+                name: 'RSA-OAEP',
+                hash: { name: 'SHA-256' } //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
+            },
+            true, //whether the key is extractable (i.e. can be used in exportKey)
+            ['encrypt'] //"encrypt" or "wrapKey" for public key import or "decrypt" or "unwrapKey" for private key imports
+        );
+        return {
+            publicKey,
+            privateKey
+        };
+    };
+
+    /** Generate keys if isn't exist any key */
+    const generateDefaultKeys = async () => {
+        const { privateKey, publicKey } = await window.crypto.subtle.generateKey(
+            {
+                name: 'RSA-OAEP',
+                modulusLength: 2048,
+                publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+                hash: { name: 'SHA-256' }
+            },
+            true,
+            ['encrypt', 'decrypt']
+        );
+
+        return {
+            publicKey,
+            privateKey
+        };
+    };
+
+    /** Load keys based on cache */
+    const loadKeys = async () => {
+        // Check existing keys.
+        if (cachedKeys?.privateKey && cachedKeys?.publicKey) {
+            return await loadCachedKeys(cachedKeys);
+        } else {
+            return await generateDefaultKeys();
+        }
+    };
+
     const generateKey = async () => {
         // Checking existing key in the browser's IndexedDB storage.
-        const cachedKeys = await getIdb<KeyStore>('combinedKey');
-
-        const loadKeys = async () => {
-            // If key is exists then import it.
-            if (cachedKeys?.privateKey && cachedKeys?.publicKey) {
-                const privateKey = await window.crypto.subtle.importKey(
-                    'jwk', //can be "jwk" (public or private), "spki" (public only), or "pkcs8" (private only)
-                    JSON.parse(window.atob(cachedKeys.privateKey)) as JsonWebKey,
-                    {
-                        //these are the algorithm options
-                        name: 'RSA-OAEP',
-                        hash: { name: 'SHA-256' } //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
-                    },
-                    true, //whether the key is extractable (i.e. can be used in exportKey)
-                    ['decrypt'] //"encrypt" or "wrapKey" for public key import or "decrypt" or "unwrapKey" for private key imports
-                );
-                const publicKey = await window.crypto.subtle.importKey(
-                    'jwk', //can be "jwk" (public or private), "spki" (public only), or "pkcs8" (private only)
-                    JSON.parse(window.atob(cachedKeys.publicKey)) as JsonWebKey,
-                    {
-                        //these are the algorithm options
-                        name: 'RSA-OAEP',
-                        hash: { name: 'SHA-256' } //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
-                    },
-                    true, //whether the key is extractable (i.e. can be used in exportKey)
-                    ['encrypt'] //"encrypt" or "wrapKey" for public key import or "decrypt" or "unwrapKey" for private key imports
-                );
-                return {
-                    publicKey,
-                    privateKey
-                };
-            } else {
-                // Generate keys.
-                const { privateKey, publicKey } = await window.crypto.subtle.generateKey(
-                    {
-                        name: 'RSA-OAEP',
-                        modulusLength: 2048,
-                        publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-                        hash: { name: 'SHA-256' }
-                    },
-                    true,
-                    ['encrypt', 'decrypt']
-                );
-
-                return {
-                    publicKey,
-                    privateKey
-                };
-            }
-        };
-
         const { publicKey, privateKey } = await loadKeys();
 
-        const exportedPublicKey = await window.crypto.subtle.exportKey('jwk', await publicKey);
-        const exportedPrivateKey = await window.crypto.subtle.exportKey('jwk', await privateKey);
+        // Make JSONWebKeys from the loaded keys
+        const exportedPublicKey = await window.crypto.subtle.exportKey('jwk', publicKey);
+        const exportedPrivateKey = await window.crypto.subtle.exportKey('jwk', privateKey);
+
+        // Make string keys from the loaded keys
         const encryptionPublicKey = window.btoa(JSON.stringify(exportedPublicKey));
         const encryptionPrivateKey = window.btoa(JSON.stringify(exportedPrivateKey));
 
-        // If there is existing cached key, we don't want to update it.
+        // If there is NO existing cached key, we will caching it to the IDB
         if (!cachedKeys) {
             await setIdb('combinedKey', {
                 privateKey: encryptionPrivateKey,
                 publicKey: encryptionPublicKey
             });
         }
-
-        // Store keys in a svelte store, to reach them easily.
-        $keyStore = { privateKey: encryptionPrivateKey, publicKey: encryptionPublicKey };
 
         return {
             keys: {
@@ -108,43 +135,47 @@
     };
 
     const encrypt = async () => {
-        const encryptionKeyObj = JSON.parse(window.atob(encryptionKeyInput)) as JsonWebKey;
+        /* eslint-disable */
+        const encryptionJWK = JSON.parse(window.atob(encryptionKeyInput)) as JsonWebKey;
+        /* eslint-enable */
         const type = {
             name: 'RSA-OAEP',
             hash: 'SHA-256'
         };
 
+        // Imported PUBLIC KEY
         const encryptionKeyImported = await crypto.subtle.importKey(
             'jwk',
-            encryptionKeyObj,
+            encryptionJWK,
             type,
             true,
             ['encrypt']
         );
 
-        const chipertext = await window.crypto.subtle.encrypt(
+        const chiperText = await window.crypto.subtle.encrypt(
             { name: 'RSA-OAEP' },
             encryptionKeyImported,
             new TextEncoder().encode(plainTextInput)
         );
 
-        const chipertextStr = String.fromCharCode.apply(
+        const chiperTextStr = String.fromCharCode.apply(
             null,
-            Array.from(new Uint8Array(chipertext))
+            Array.from(new Uint8Array(chiperText))
         );
-        const chipertextBase64 = window.btoa(chipertextStr);
+        const chipertextBase64 = window.btoa(chiperTextStr);
 
         chiperTextOutput = chipertextBase64;
     };
 
     const decrypt = async () => {
-        const newChipertextStr = window.atob(chiperTextInput);
-        const chipertext = str2ab(newChipertextStr);
+        // If the user has own key, then we'll iport it
+        const newChiperTextStr = window.atob(chiperTextInput);
+        const chiperText = str2ab(newChiperTextStr);
 
         const decryptedAb = await window.crypto.subtle.decrypt(
             { name: 'RSA-OAEP' },
             globalKeys.keys.privateKey,
-            chipertext
+            chiperText
         );
 
         const decrypted = String.fromCharCode.apply(null, Array.from(new Uint8Array(decryptedAb)));
@@ -162,102 +193,59 @@
     };
 
     const main = async () => {
-        const keys = await generateKey();
-        globalKeys = keys;
-        encryptionKeyOutput = keys.encryptionKey;
+        globalKeys = await generateKey();
+        encryptionKeyOutput = globalKeys.encryptionKey; // Public key;
     };
 
     onMount(async () => {
         await checkBrowserCompatibility();
+        cachedKeys = await getIdb<KeyStore>('combinedKey');
         await main();
     });
+
+    let mode: 'send' | 'receive' = 'send';
 </script>
 
 <svelte:head>
     <title>Home</title>
 </svelte:head>
 
+<h1 class="text-6xl font-bold text-center my-10">Messaging ecrypted. Simply and safely.</h1>
+
 <section>
-    <h1 class="font-medium leading-tight text-5xl mt-0 mb-2 text-gray-600">Crypter</h1>
-
-    <div class="rounded-md border border-gray-100 p-4">
-        <h2 class=" font-normal text-2xl">Encrypt</h2>
-
-        <form on:submit|preventDefault={encrypt} autocomplete="off" class="my-2">
-            <label for="encryption_key">Encryption Key: </label>
-            <small class="block">Paste the encryption key</small>
-            <input
-                bind:value={encryptionKeyInput}
-                type="text"
-                id="encryption_key"
-                name="encryption_key"
-                class="mt-1 block w-full rounded-md bg-gray-100 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0 
-                focus:shadow-sm transition-colors"
-                required
-            />
-            {#if encryptionKeyOutput}
-                <div class="my-3">
-                    <h4>Encryption key:</h4>
-                    <CodeBlock text={encryptionKeyOutput} />
-                </div>
-            {/if}
-            <br />
-            <label for="plaintext">Plaintext:</label>
-            <textarea
-                bind:value={plainTextInput}
-                id="plaintext"
-                name="plaintext"
-                rows="4"
-                class="mt-1 block w-full rounded-md bg-gray-100 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0 
-                transition-colors"
-            />
-            <br />
-            <br />
+    <div class="grid grid-cols-12 my-5">
+        <div class="flex border border-secondary-500 rounded-full p-[2px] col-start-5 col-end-9">
             <button
-                type="submit"
-                class="px-8 py-2 bg-indigo-200 text-indigo-700 hover:bg-indigo-300 active:bg-indigo-400 transition-colors rounded-md"
+                class="px-6 py-2 text-2xl font-semibold w-full transition-colors rounded-full {mode ===
+                'send'
+                    ? 'bg-secondary-500 hover:bg-secondary-700 text-primary-800'
+                    : 'hover:bg-secondary-500/30'}"
+                on:click={() => (mode = 'send')}
             >
-                Encrypt
+                Send
             </button>
-        </form>
-
-        {#if chiperTextOutput}
-            <div class="my-4">
-                <h3 class="font-normal text-xl">Result</h3>
-                <small>aka chipertext</small>
-                <CodeBlock class="bg-green-50" text={chiperTextOutput} />
-            </div>
-        {/if}
+            <button
+                class="px-6 py-2 text-2xl font-semibold w-full transition-colors rounded-full {mode ===
+                'receive'
+                    ? 'bg-secondary-500 hover:bg-secondary-700  text-primary-800'
+                    : 'hover:bg-secondary-500/30'}"
+                on:click={() => (mode = 'receive')}
+            >
+                Receive
+            </button>
+        </div>
     </div>
-
-    <div class="rounded-md border border-gray-100 p-4 my-4">
-        <h2 class=" font-normal text-2xl">Decrypt</h2>
-        <form on:submit|preventDefault={decrypt} class="my-2" autocomplete="off">
-            <label for="chipertext">Chipertext:</label>
-            <input
-                bind:value={chiperTextInput}
-                type="text"
-                id="chipertext"
-                name="chipertext"
-                class="mt-1
-            block
-            w-full
-            rounded-md
-            bg-gray-100
-            border-transparent
-            focus:border-gray-500 focus:bg-white focus:ring-0"
-            /><br /><br />
-            <button
-                type="submit"
-                class="px-8 py-2 bg-indigo-200 text-indigo-700 hover:bg-indigo-300 active:bg-indigo-400 transition-colors rounded-md"
-            >
-                Decrypt
-            </button>
-        </form>
-
-        {#if plainTextOutput}
-            <h2>Result</h2>
-            <p id="plaintext-output break-words">{plainTextOutput}</p>
+    <div class="grid grid-cols-2 gap-32">
+        {#if mode === 'send'}
+            <Send
+                bind:plainTextInput
+                bind:encryptionKeyInput
+                {encryptionKeyOutput}
+                {chiperTextOutput}
+                on:submit={encrypt}
+            />
+        {:else}
+            <Receive bind:chiperTextInput {plainTextOutput} on:submit={decrypt} />
         {/if}
     </div>
 </section>

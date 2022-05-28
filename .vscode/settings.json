@@ -1,0 +1,18 @@
+{
+    "workbench.iconTheme": "material-icon-theme",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
+    "editor.detectIndentation": false,
+    "html.format.contentUnformatted": "",
+    "svelte.enable-ts-plugin": true,
+    "svelte.plugin.svelte.useNewTransformation": true,
+    "px-to-rem.px-per-rem": 16,
+    "px-to-rem.number-of-decimals-digits": 2,
+    "editor.bracketPairColorization.enabled": true,
+    "redhat.telemetry.enabled": false,
+    "tailwindCSS.rootFontSize": 16,
+    "go.goroot": "/snap/go/current"
+}
