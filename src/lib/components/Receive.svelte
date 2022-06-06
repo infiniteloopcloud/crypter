@@ -1,34 +1,23 @@
 <script lang="ts">
+    import CodeBlock from './blocks/CodeBlock.svelte';
+
     export let chiperTextInput: string;
     export let plainTextOutput: string;
+    export let encryptionKeyOutput: string;
 </script>
 
 <div class="mt-8">
     <form on:submit|preventDefault autocomplete="off">
-        <label for="chipertext" class="ml-8">Chipertext</label>
+        <label for="chipertext" class="ml-8 text-2xl">Crypted Message</label>
         <textarea
             bind:value={chiperTextInput}
             rows="8"
             type="text"
             id="chipertext"
             name="chipertext"
-            class="mt-1 block w-full rounded-[40px] bg-primary-500 border-secondary-500 focus:bg-primary-600 focus:ring-0 
+            class="mt-1 block w-full rounded-[40px] bg-primary-500 border-white focus:bg-primary-600 focus:ring-0 
             focus:shadow-sm transition-colors"
         />
-        <!-- <div class="mt-5">
-            <label for="encryption_key" class="ml-8" title="Paste the encryption key">
-                Personal Encryption Key
-            </label>
-            <input
-                bind:value={encryptionKeyInput}
-                type="text"
-                id="encryption_key"
-                name="encryption_key"
-                class="mt-1 h-16 block w-full rounded-full bg-primary-500 border-secondary-500 focus:bg-primary-600 focus:ring-0 
-                focus:shadow-sm transition-colors"
-                required
-            />
-        </div> -->
         <button
             type="submit"
             class="my-6 px-14 py-3 font-bold text-xl bg-secondary-500 text-primary-900 hover:bg-secondary-700 active:bg-secondary-800 transition-colors rounded-full"
@@ -39,6 +28,12 @@
     {#if plainTextOutput}
         <h2>Result</h2>
         <p id="plaintext-output break-words">{plainTextOutput}</p>
+    {/if}
+    {#if encryptionKeyOutput}
+        <div class="my-3">
+            <h4 class="text-2xl mb-1">Encryption key:</h4>
+            <CodeBlock text={encryptionKeyOutput} />
+        </div>
     {/if}
 </div>
 <div class="mt-8">

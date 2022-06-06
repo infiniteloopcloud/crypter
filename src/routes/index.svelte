@@ -6,10 +6,10 @@
 </script>
 
 <script lang="ts">
+    import type { KeyStore } from '$lib/models/interfaces/KeyStore.interface';
     import { checkBrowserCompatibility } from '$lib/utils/helpers';
     import { onMount } from 'svelte';
     import { get as getIdb, set as setIdb } from 'idb-keyval';
-    import type { KeyStore } from '$lib/models/interfaces/KeyStore.interface';
     import Send from '$lib/components/Send.svelte';
     import Receive from '$lib/components/Receive.svelte';
 
@@ -41,6 +41,9 @@
 
     // Existing keys from the IDB store
     let cachedKeys: KeyStore | undefined;
+
+    // UI tab state
+    let mode: 'send' | 'receive' = 'send';
 
     /** Load keys from cache(indexedDB) */
     const loadCachedKeys = async (keyStore: KeyStore) => {
@@ -201,9 +204,8 @@
         await checkBrowserCompatibility();
         cachedKeys = await getIdb<KeyStore>('combinedKey');
         await main();
+        encryptionKeyInput = encryptionKeyOutput;
     });
-
-    let mode: 'send' | 'receive' = 'send';
 </script>
 
 <svelte:head>
@@ -214,7 +216,7 @@
 
 <section>
     <div class="grid grid-cols-12 my-5">
-        <div class="flex border border-secondary-500 rounded-full p-[2px] col-start-5 col-end-9">
+        <div class="flex border border-white rounded-full p-[2px] col-start-5 col-end-9">
             <button
                 class="px-6 py-2 text-2xl font-semibold w-full transition-colors rounded-full {mode ===
                 'send'
@@ -240,12 +242,16 @@
             <Send
                 bind:plainTextInput
                 bind:encryptionKeyInput
-                {encryptionKeyOutput}
                 {chiperTextOutput}
                 on:submit={encrypt}
             />
         {:else}
-            <Receive bind:chiperTextInput {plainTextOutput} on:submit={decrypt} />
+            <Receive
+                bind:chiperTextInput
+                {encryptionKeyOutput}
+                {plainTextOutput}
+                on:submit={decrypt}
+            />
         {/if}
     </div>
 </section>
