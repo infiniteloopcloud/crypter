@@ -1,4 +1,4 @@
-export const copyToClipboard = (text: string, successfully: () => void, failure: () => void) => {
+export const copyToClipboard = (text: string, successfully?: () => void, failure?: () => void) => {
     const clipboard = navigator.clipboard;
     if (clipboard !== undefined) {
         navigator.clipboard.writeText(text).then(successfully, failure);
@@ -12,12 +12,20 @@ export const copyToClipboard = (text: string, successfully: () => void, failure:
             el.setSelectionRange(0, text.length);
 
             if (document.execCommand('copy')) {
-                successfully();
+                successfully && successfully();
             }
 
             el.remove();
         } else {
-            failure();
+            failure && failure();
         }
+    }
+};
+
+export const checkBrowserCompatibility = async () => {
+    if (!window.indexedDB) {
+        throw Error(
+            `Your browser doesn't support a stable version of IndexedDB. Such and such feature will not be available.`
+        );
     }
 };

@@ -17,7 +17,9 @@
             }, 1000);
             dispatch('copyClipboard', text);
         };
-        const onFailure = () => {};
+        const onFailure = () => {
+            console.error('Something went wrong while handle copy to clipboard');
+        };
 
         copyToClipboard(
             text,
