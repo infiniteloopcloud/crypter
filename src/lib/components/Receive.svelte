@@ -31,7 +31,7 @@
     {/if}
     {#if encryptionKeyOutput}
         <div class="my-3">
-            <h4 class="text-2xl mb-1">Encryption key:</h4>
+            <h4 class="ml-8 text-2xl mb-1">Encryption key:</h4>
             <CodeBlock text={encryptionKeyOutput} />
         </div>
     {/if}
