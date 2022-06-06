@@ -20,14 +20,16 @@
         />
         <button
             type="submit"
-            class="my-6 px-14 py-3 font-bold text-xl bg-secondary-500 text-primary-900 hover:bg-secondary-700 active:bg-secondary-800 transition-colors rounded-full"
+            class="mt-6 px-14 py-3 font-bold text-xl bg-secondary-500 text-primary-900 hover:bg-secondary-700 active:bg-secondary-800 transition-colors rounded-full"
         >
             Decrypt
         </button>
     </form>
     {#if plainTextOutput}
-        <h2>Result</h2>
-        <p id="plaintext-output break-words">{plainTextOutput}</p>
+        <div class="my-3">
+            <h4 class="ml-8 text-2xl mb-1">Decrypted message:</h4>
+            <CodeBlock text={plainTextOutput} />
+        </div>
     {/if}
     {#if encryptionKeyOutput}
         <div class="my-3">
