@@ -21,6 +21,15 @@
                 class="mt-1 block w-full rounded-[40px] h-80 bg-primary-500 border border-white focus:bg-primary-600 focus:ring-0 transition-colors"
             />
         </div>
+
+        {#if chiperTextOutput}
+            <div class="my-4">
+                <h3 class="ml-8 font-normal text-2xl">Encrypted Message</h3>
+                <small class="ml-8">aka chipertext</small>
+                <CodeBlock class="" text={chiperTextOutput} />
+            </div>
+        {/if}
+
         <div class="mt-5">
             <label for="encryption_key" class="text-2xl ml-8" title="Paste the encryption key">
                 Recipient's Encryption Key
@@ -83,14 +92,6 @@
             </div>
         </div>
     </form>
-
-    {#if chiperTextOutput}
-        <div class="my-4">
-            <h3 class="font-normal text-xl">Result</h3>
-            <small>aka chipertext</small>
-            <CodeBlock class="" text={chiperTextOutput} />
-        </div>
-    {/if}
 </div>
 <div class="mt-8">
     <div>
