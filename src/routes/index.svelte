@@ -212,7 +212,7 @@
     <title>Home</title>
 </svelte:head>
 
-<h1 class="text-6xl font-bold text-center my-10">Messaging ecrypted. Simply and safely.</h1>
+<h1 class="text-6xl font-bold text-center my-10">Messaging encrypted. Simply and safely.</h1>
 
 <section>
     <div class="grid grid-cols-12 my-5">
