@@ -10,9 +10,6 @@ const config = {
     ],
     kit: {
         adapter: adapterStatic(),
-        prerender: {
-            default: true
-        },
         trailingSlash: 'always'
     }
 };
