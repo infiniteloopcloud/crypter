@@ -1,10 +1,3 @@
-<script context="module" lang="ts">
-    import type { Load } from '@sveltejs/kit';
-    export const load: Load = async () => {
-        return {};
-    };
-</script>
-
 <script lang="ts">
     import type { KeyStore } from '$lib/models/interfaces/KeyStore.interface';
     import { checkBrowserCompatibility } from '$lib/utils/helpers';
