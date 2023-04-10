@@ -29,18 +29,17 @@
     };
 </script>
 
-<clipboard-copy
+<button
     aria-label="Copy"
     class="align-middle bg-gray-200 {isCopied
         ? 'border-green-400'
-        : 'hover:bg-gray-300 active:bg-gray-400 active:border-gray-400 border-gray-300'} border-solid 
-    rounded-md border shadow-md m-2 p-0 tooltipped-no-delay relative inline-block invisible group-hover:visible select-none appearance-none 
+        : 'hover:bg-gray-300 active:bg-gray-400 active:border-gray-400 border-gray-300'} border-solid
+    rounded-md border shadow-md m-2 p-0 tooltipped-no-delay relative inline-block invisible group-hover:visible select-none appearance-none
     whitespace-nowrap cursor-pointer"
     data-copy-feedback="Copied!"
     data-tooltip-direction="w"
     value={text}
     tabindex="0"
-    role="button"
     on:click={handleClick}
 >
     {#if isCopied}
@@ -78,4 +77,4 @@
             />
         </svg>
     {/if}
-</clipboard-copy>
+</button>

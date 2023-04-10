@@ -39,7 +39,7 @@
                 type="text"
                 id="encryption_key"
                 name="encryption_key"
-                class="mt-1 h-16 block w-full rounded-full bg-primary-500 border-white focus:bg-primary-600 focus:ring-0 
+                class="mt-1 h-16 block w-full rounded-full bg-primary-500 border-white focus:bg-primary-600 focus:ring-0
                 focus:shadow-sm transition-colors"
                 required
             />
@@ -52,7 +52,7 @@
                 Encrypt
             </button>
 
-            <div
+            <button
                 class="text-white hover:text-secondary-700 cursor-pointer"
                 on:click={() =>
                     copyToClipboard(
@@ -89,7 +89,7 @@
                         d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
                     />
                 </svg>
-            </div>
+            </button>
         </div>
     </form>
 </div>
