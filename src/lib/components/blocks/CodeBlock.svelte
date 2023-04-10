@@ -14,7 +14,7 @@
         <code class="break-all">{text}</code>
     </pre>
     {#if copyClipboard}
-        <div class="absolute right-2 top-2 ">
+        <div class="absolute right-2 top-2">
             <CopyClipboard {text} />
         </div>
     {/if}

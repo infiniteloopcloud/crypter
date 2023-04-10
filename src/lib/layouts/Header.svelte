@@ -56,16 +56,16 @@
         <nav>
             <ul class="inline-flex gap-5">
                 <li class:active={$page.url.pathname === '/about'}>
-                    <a sveltekit:prefetch href="/#">About infinite loop</a>
+                    <a data-sveltekit-preload-code href="/#">About infinite loop</a>
                 </li>
                 <li class:active={$page.url.pathname === '/services'}>
-                    <a sveltekit:prefetch href="/#">Services</a>
+                    <a data-sveltekit-preload-code href="/#">Services</a>
                 </li>
                 <li class:active={$page.url.pathname === '/career'}>
-                    <a sveltekit:prefetch href="/#">Careers</a>
+                    <a data-sveltekit-preload-code href="/#">Careers</a>
                 </li>
                 <li class:active={$page.url.pathname === '/contact'}>
-                    <a sveltekit:prefetch href="/#">Contact Us</a>
+                    <a data-sveltekit-preload-code href="/#">Contact Us</a>
                 </li>
             </ul>
         </nav>

@@ -12,10 +12,9 @@
         <textarea
             bind:value={chiperTextInput}
             rows="8"
-            type="text"
             id="chipertext"
             name="chipertext"
-            class="mt-1 block w-full rounded-[40px] bg-primary-500 border-white focus:bg-primary-600 focus:ring-0 
+            class="mt-1 block w-full rounded-[40px] bg-primary-500 border-white focus:bg-primary-600 focus:ring-0
             focus:shadow-sm transition-colors"
         />
         <button
