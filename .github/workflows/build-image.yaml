@@ -39,5 +39,7 @@ jobs:
           password: ${{ secrets.DEPLOY_TOKEN }}
       - name: Build the discord-bitbucket Docker image
         run: |
-          docker build . --tag ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
-          docker push ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
+          docker build . --tag ghcr.io/infiniteloopcloud/crypter:latest
+          docker push ghcr.io/infiniteloopcloud/crypter:latest
+          # docker build . --tag ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
+          # docker push ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
