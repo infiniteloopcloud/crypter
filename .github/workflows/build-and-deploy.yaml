@@ -1,4 +1,4 @@
-name: Crypter image build
+name: Crypter image build and deploy
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
           node-version: '18.x'
       - run: npm ci
       - run: npm run build --if-present
-      
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -33,7 +33,7 @@ jobs:
       - run: cp /etc/ssl/certs/ca-certificates.crt ./ca-certificates.crt
       - name: Build the Docker image
         run: docker build . --file Dockerfile --tag crypter:v1.1.1
-      
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
         with:
@@ -44,3 +44,28 @@ jobs:
         run: |
           docker build . --tag ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
           docker push ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Deploy the statics
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.STATIC_HOST }}
+        username: ${{ secrets.STATIC_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.STATIC_PORT }}
+        script: |
+          docker rm -f crypter
+          echo ${GITHUB_REF/refs\/tags\//} > /tmp/version 
+          docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
+          rm -f /etc/caddy/crypter.caddy
+          tee -a /etc/caddy/crypter.caddy << END
+          crypter.infiniteloop.cloud {
+            tls qwer.kockaa@gmail.com
+            reverse_proxy localhost:8080
+          }
+          END
+          systemctl restart caddy
