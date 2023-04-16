@@ -16,6 +16,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: 33322
         debug: true
+        use_insecure_cipher: true
         script: |
           whoami
           ls -al
