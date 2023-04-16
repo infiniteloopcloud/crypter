@@ -18,3 +18,10 @@ jobs:
         script: |
           docker ps -aq --filter "name=crypter" | xargs -r docker rm
           docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:v0.1.0
+          rm -f /etc/caddy/crypter.caddy
+          tee -a /etc/caddy/crypter.caddy << END
+          test-crypter.infiniteloop.cloud {
+            tls qwer.kockaa@gmail.com
+            reverse_proxy localhost:8080
+          }
+          END
