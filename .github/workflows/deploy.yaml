@@ -8,13 +8,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Deploy the statics
-      uses: garygrossgarten/github-action-ssh@release
+      uses: appleboy/ssh-action@v0.1.10
       with:
         host: ${{ secrets.STATIC_HOST }}
         username: ${{ secrets.STATIC_USERNAME }}
-        privateKey: ${{ secrets.SSH_KEY }}
+        key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.STATIC_PORT }}
-        command: |
+        debug: true
+        script: |
           whoami
           ls -al
           systemctl status caddy
