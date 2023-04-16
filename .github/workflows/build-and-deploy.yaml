@@ -52,15 +52,18 @@ jobs:
 
     - name: Deploy the statics
       uses: appleboy/ssh-action@v0.1.5
+      env:
+        REF: ${GITHUB_REF/refs\/tags\//}
       with:
         host: ${{ secrets.STATIC_HOST }}
         username: ${{ secrets.STATIC_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.STATIC_PORT }}
+        envs: REF
         script: |
           docker rm -f crypter
-          echo ${GITHUB_REF/refs\/tags\//} > /tmp/version 
-          docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
+          echo $REF > /tmp/version 
+          docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:$REF
           rm -f /etc/caddy/crypter.caddy
           tee -a /etc/caddy/crypter.caddy << END
           crypter.infiniteloop.cloud {
