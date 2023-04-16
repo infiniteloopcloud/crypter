@@ -1,6 +1,9 @@
 name: Deploy to static-sites server
 
-on: [push]
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
   build:
@@ -17,11 +20,12 @@ jobs:
         port: ${{ secrets.STATIC_PORT }}
         script: |
           docker rm -f crypter
-          docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:v0.1.0
+          docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
           rm -f /etc/caddy/crypter.caddy
           tee -a /etc/caddy/crypter.caddy << END
-          test-crypter.infiniteloop.cloud {
+          crypter.infiniteloop.cloud {
             tls qwer.kockaa@gmail.com
             reverse_proxy localhost:8080
           }
           END
+          systemctl restart caddy
