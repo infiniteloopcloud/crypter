@@ -11,13 +11,10 @@ jobs:
     - name: Deploy the statics
       uses: appleboy/ssh-action@v0.1.5
       with:
-        host: 157.90.121.18
-        username: root
+        host: ${{ secrets.STATIC_HOST }}
+        username: ${{ secrets.STATIC_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
-        port: 33322
-        debug: true
-        use_insecure_cipher: true
+        port: ${{ secrets.STATIC_PORT }}
         script: |
-          whoami
-          ls -al
-          systemctl status caddy
+          docker ps -aq --filter "name=crypter" | xargs -r docker rm
+          docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:v0.1.0
