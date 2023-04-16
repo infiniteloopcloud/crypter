@@ -57,7 +57,7 @@ jobs:
       - name: Deploy the statics
         uses: appleboy/ssh-action@v0.1.5
         env:
-          REF: ${{GITHUB_REF}}
+          REF: ${{github.action_ref}}
         with:
           host: ${{ secrets.STATIC_HOST }}
           username: ${{ secrets.STATIC_USERNAME }}
