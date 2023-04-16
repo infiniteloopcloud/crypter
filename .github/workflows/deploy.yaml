@@ -10,10 +10,10 @@ jobs:
     - name: Deploy the statics
       uses: appleboy/ssh-action@v0.1.10
       with:
-        host: ${{ secrets.STATIC_HOST }}
-        username: ${{ secrets.STATIC_USERNAME }}
+        host: 157.90.121.18
+        username: root
         key: ${{ secrets.SSH_KEY }}
-        port: ${{ secrets.STATIC_PORT }}
+        port: 33322
         debug: true
         script: |
           whoami
