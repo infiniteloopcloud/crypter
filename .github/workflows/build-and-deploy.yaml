@@ -49,26 +49,30 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-
-    - name: Deploy the statics
-      uses: appleboy/ssh-action@v0.1.5
-      env:
-        REF: ${GITHUB_REF/refs\/tags\//}
-      with:
-        host: ${{ secrets.STATIC_HOST }}
-        username: ${{ secrets.STATIC_USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        port: ${{ secrets.STATIC_PORT }}
-        envs: REF
-        script: |
-          docker rm -f crypter
-          echo $REF > /tmp/version 
-          docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:$REF
-          rm -f /etc/caddy/crypter.caddy
-          tee -a /etc/caddy/crypter.caddy << END
-          crypter.infiniteloop.cloud {
-            tls qwer.kockaa@gmail.com
-            reverse_proxy localhost:8080
-          }
-          END
-          systemctl restart caddy
+      - uses: actions/checkout@v3
+      - name: Create env var
+        run: |
+          export REF=${GITHUB_REF/refs\/tags\//}
+          echo $REF
+      - name: Deploy the statics
+        uses: appleboy/ssh-action@v0.1.5
+        # env:
+        #   REF: ${GITHUB_REF/refs\/tags\//}
+        with:
+          host: ${{ secrets.STATIC_HOST }}
+          username: ${{ secrets.STATIC_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.STATIC_PORT }}
+          envs: REF
+          script: |
+            docker rm -f crypter
+            echo $REF > /tmp/version 
+            docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:$REF
+            rm -f /etc/caddy/crypter.caddy
+            tee -a /etc/caddy/crypter.caddy << END
+            crypter.infiniteloop.cloud {
+              tls qwer.kockaa@gmail.com
+              reverse_proxy localhost:8080
+            }
+            END
+            systemctl restart caddy
