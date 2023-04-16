@@ -42,8 +42,8 @@ jobs:
           password: ${{ secrets.DEPLOY_TOKEN }}
       - name: Build the discord-bitbucket Docker image
         run: |
-          docker build . --tag ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
-          docker push ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF/refs\/tags\//}
+          docker build . --tag ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF_NAME}
+          docker push ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF_NAME}
   deploy:
     name: Deploy
     needs: build
@@ -56,8 +56,8 @@ jobs:
           echo $REF
       - name: Deploy the statics
         uses: appleboy/ssh-action@v0.1.5
-        # env:
-        #   REF: ${GITHUB_REF/refs\/tags\//}
+        env:
+          REF: ${{GITHUB_REF_NAME}}
         with:
           host: ${{ secrets.STATIC_HOST }}
           username: ${{ secrets.STATIC_USERNAME }}
