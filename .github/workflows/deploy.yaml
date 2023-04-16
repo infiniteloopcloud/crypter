@@ -7,8 +7,9 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
+
     - name: Deploy the statics
-      uses: appleboy/ssh-action@v0.1.10
+      uses: appleboy/ssh-action@v0.1.5
       with:
         host: 157.90.121.18
         username: root
