@@ -17,3 +17,4 @@ jobs:
         script: |
           whoami
           ls -al
+          systemctl status caddy
