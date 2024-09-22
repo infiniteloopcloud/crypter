@@ -1,74 +1,74 @@
 name: Crypter image build and deploy
 
 on:
-  push:
-    tags:
-      - '*'
+    push:
+        tags:
+            - '*'
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+    REGISTRY: ghcr.io
+    IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-      - run: npm ci
-      - run: npm run build --if-present
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - name: Use Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '20.x'
+            - run: npm ci
+            - run: npm run build --if-present
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.20"
-      - name: Go package management
-        run: go mod tidy && go mod vendor
-      - name: Build
-        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -v -o build_artifact main.go
+            - name: Set up Go
+              uses: actions/setup-go@v4
+              with:
+                  go-version: '1.20'
+            - name: Go package management
+              run: go mod tidy && go mod vendor
+            - name: Build
+              run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -v -o build_artifact main.go
 
-      - run: cp /etc/ssl/certs/ca-certificates.crt ./ca-certificates.crt
-      - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag crypter:v1.1.1
+            - run: cp /etc/ssl/certs/ca-certificates.crt ./ca-certificates.crt
+            - name: Build the Docker image
+              run: docker build . --file Dockerfile --tag crypter:v1.1.1
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.DEPLOY_TOKEN }}
-      - name: Build the discord-bitbucket Docker image
-        run: |
-          docker build . --tag ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF_NAME}
-          docker push ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF_NAME}
-  deploy:
-    name: Deploy
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy the statics
-        uses: appleboy/ssh-action@v0.1.5
-        env:
-          REF: ${{github.ref_name}}
-        with:
-          host: ${{ secrets.STATIC_HOST }}
-          username: ${{ secrets.STATIC_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.STATIC_PORT }}
-          envs: REF
-          script: |
-            docker rm -f crypter
-            echo $REF > /tmp/version 
-            docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:$REF
-            rm -f /etc/caddy/crypter.caddy
-            tee -a /etc/caddy/crypter.caddy << END
-            crypter.infiniteloop.cloud {
-              tls qwer.kockaa@gmail.com
-              reverse_proxy localhost:8080
-            }
-            END
-            systemctl restart caddy
+            - name: Login to GitHub Container Registry
+              uses: docker/login-action@v1
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.DEPLOY_TOKEN }}
+            - name: Build the discord-bitbucket Docker image
+              run: |
+                  docker build . --tag ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF_NAME}
+                  docker push ghcr.io/infiniteloopcloud/crypter:${GITHUB_REF_NAME}
+    deploy:
+        name: Deploy
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - name: Deploy the statics
+              uses: appleboy/ssh-action@v0.1.5
+              env:
+                  REF: ${{github.ref_name}}
+              with:
+                  host: ${{ secrets.STATIC_HOST }}
+                  username: ${{ secrets.STATIC_USERNAME }}
+                  key: ${{ secrets.SSH_KEY }}
+                  port: ${{ secrets.STATIC_PORT }}
+                  envs: REF
+                  script: |
+                      docker rm -f crypter
+                      echo $REF > /tmp/version 
+                      docker run -d --name crypter -p 8080:8080 ghcr.io/infiniteloopcloud/crypter:$REF
+                      rm -f /etc/caddy/crypter.caddy
+                      tee -a /etc/caddy/crypter.caddy << END
+                      crypter.infiniteloop.cloud {
+                        tls qwer.kockaa@gmail.com
+                        reverse_proxy localhost:8080
+                      }
+                      END
+                      systemctl restart caddy
