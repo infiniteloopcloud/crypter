@@ -131,9 +131,7 @@
     };
 
     const encrypt = async () => {
-        /* eslint-disable */
-        const encryptionJWK = JSON.parse(window.atob(encryptionKeyInput)) as JsonWebKey;
-        /* eslint-enable */
+        const encryptionJWK = JSON.parse(window.atob(encryptionKeyInput)); // as JsonWebKey;
         const type = {
             name: 'RSA-OAEP',
             hash: 'SHA-256'
